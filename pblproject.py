@@ -2,7 +2,6 @@ import streamlit as st
 import requests
 from streamlit_extras.add_vertical_space import add_vertical_space
 
-
 # API Configuration
 MODEL_ENDPOINTS = {
     "GPT 4o mini": "https://payload.vextapp.com/hook/TZ9Z7POAYP/catch/$(10)",
@@ -14,14 +13,14 @@ API_KEYS = {
     "Deepseek": "Api-Key RHfDKtsq.w9tO8fgTqMOM9NGbISxrTivhpF4SxrcV"
 }
 
-# Function to send a prompt to a model
+# Function to send prompt to model
 def fetch_model_response(user_prompt, model_name):
     headers = {
         "Content-Type": "application/json",
         "Apikey": API_KEYS[model_name]
     }
     data = {
-        "payload": f"Optimize this prompt for clarity, grammar, and expected output quality:\n{user_prompt}",
+        "payload": user_prompt,
         "env": "dev"
     }
 
@@ -39,23 +38,32 @@ st.markdown("Enter your raw prompt below and get a single **optimized** version 
 
 with st.sidebar:
     st.header("About")
-    st.markdown("**Authors:** Anuj Rawat, Pulle Thirupathi")
+    st.markdown("**Creators:** Anuj Rawat, Pulle Thirupathi")
     add_vertical_space(2)
     st.markdown("This tool enhances prompt structure based on your input grammar and intent using a hybrid AI approach.")
 
 st.markdown("---")
 user_input = st.text_area("💬 Enter your raw prompt here:")
 
+# New: Domain selection
+domain = st.text_input("🌐 Specify the domain (e.g., marketing, education, medical):", value="general")
+
 if st.button("🚀 Optimize Prompt"):
     if user_input.strip():
-        # Call both models
-        gpt_response = fetch_model_response(user_input, "GPT 4o mini")
-        deepseek_response = fetch_model_response(user_input, "Deepseek")
+        # Add domain context to the prompt
+        prompt_to_send = (
+            f"Optimize this prompt for clarity, grammar, and expected output quality "
+            f"in the context of {domain}:\n{user_input}"
+        )
 
-        # Hybrid strategy: You can choose to pick the best, average them, or merge.
-        # For now, let's just show the GPT version if available, else Deepseek.
+        # Get model responses
+        gpt_response = fetch_model_response(prompt_to_send, "GPT 4o mini")
+        deepseek_response = fetch_model_response(prompt_to_send, "Deepseek")
+
+        # Hybrid strategy
         final_optimized = gpt_response if len(gpt_response) > len(deepseek_response) else deepseek_response
 
+        # Display optimized prompt
         st.subheader("✅ Optimized Prompt")
         st.code(final_optimized.strip(), language='markdown')
     else:
