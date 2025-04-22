@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 from streamlit_extras.add_vertical_space import add_vertical_space
 
+
 # API Configuration
 MODEL_ENDPOINTS = {
     "GPT 4o mini": "https://payload.vextapp.com/hook/TZ9Z7POAYP/catch/$(10)",
@@ -10,7 +11,7 @@ MODEL_ENDPOINTS = {
 
 API_KEYS = {
     "GPT 4o mini": "Api-Key Ixgvb348.9g9qdwzROoygMc3r2KAE3rljhEec2vNH",
-    "Deepseek": "Api-Key nvkvCOHY.cZal7zpbQ5ZjR47HfwumB9N4O8QP6u5X"
+    "Deepseek": "Api-Key RHfDKtsq.w9tO8fgTqMOM9NGbISxrTivhpF4SxrcV"
 }
 
 # Function to send a prompt to a model
