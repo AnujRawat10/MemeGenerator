@@ -1,0 +1,1 @@
+font = ImageFont.truetype("fonts/DejaVuSans-Bold.ttf", size=40)
