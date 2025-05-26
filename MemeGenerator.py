@@ -2,6 +2,7 @@ import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 import requests
 import io
+import os
 from streamlit_extras.add_vertical_space import add_vertical_space
 
 # API Configuration
@@ -15,6 +16,13 @@ API_KEYS = {
     "Deepseek": "Api-Key RHfDKtsq.w9tO8fgTqMOM9NGbISxrTivhpF4SxrcV"
 }
 
+# Load font with fallback
+def load_font(size=40):
+    try:
+        return ImageFont.truetype("arial.ttf", size=size)
+    except IOError:
+        return ImageFont.load_default()
+
 # Function to call model
 def fetch_model_response(user_prompt, model_name):
     headers = {
@@ -25,7 +33,6 @@ def fetch_model_response(user_prompt, model_name):
         "payload": user_prompt,
         "env": "dev"
     }
-
     try:
         response = requests.post(MODEL_ENDPOINTS[model_name], headers=headers, json=data)
         response.raise_for_status()
@@ -33,28 +40,34 @@ def fetch_model_response(user_prompt, model_name):
     except requests.exceptions.RequestException as e:
         return f"Error: {e}"
 
+# Word wrap helper
+def wrap_text(text, font, max_width):
+    lines = []
+    words = text.split()
+    line = ""
+    for word in words:
+        test_line = f"{line} {word}".strip()
+        if font.getsize(test_line)[0] <= max_width:
+            line = test_line
+        else:
+            lines.append(line)
+            line = word
+    if line:
+        lines.append(line)
+    return lines
+
 # Meme generation (add caption to image)
 def generate_meme(image, caption):
     draw = ImageDraw.Draw(image)
-    font = ImageFont.truetype("arial.ttf", size=40)  # You can change font and size
-
-    # Wrap text
-    lines = []
-    words = caption.split()
-    line = ""
-    for word in words:
-        if len(line + word) < 30:
-            line += word + " "
-        else:
-            lines.append(line)
-            line = word + " "
-    lines.append(line)
+    font = load_font(size=40)
+    max_width = image.width - 40  # Margin for wrapping
+    lines = wrap_text(caption, font, max_width)
 
     y = 10
     for line in lines:
         w, h = draw.textsize(line, font=font)
         draw.text(((image.width - w) / 2, y), line, fill="white", stroke_width=2, stroke_fill="black", font=font)
-        y += h + 5
+        y += h + 10
 
     return image
 
@@ -89,7 +102,12 @@ if st.button("🎯 Generate Meme"):
         full_prompt = f"Generate a sarcastic, trending meme caption related to '{trend}'. Idea: {user_prompt}"
         gpt_caption = fetch_model_response(full_prompt, "GPT 4o mini")
         deepseek_caption = fetch_model_response(full_prompt, "Deepseek")
-        final_caption = gpt_caption if len(gpt_caption) > len(deepseek_caption) else deepseek_caption
+
+        # Pick longer one or fallback
+        if "Error" in gpt_caption and "Error" in deepseek_caption:
+            final_caption = "Failed to generate caption."
+        else:
+            final_caption = gpt_caption if len(gpt_caption) > len(deepseek_caption) else deepseek_caption
 
         st.subheader("📝 Meme Caption")
         st.success(final_caption.strip())
@@ -100,4 +118,4 @@ if st.button("🎯 Generate Meme"):
             image = Image.new("RGB", (600, 400), color="black")
 
         meme_img = generate_meme(image.copy(), final_caption.strip())
-        st.image(meme_img, caption="Your Meme", use_column_width=True)
+        st.image(meme_img, caption="🎉 Your Meme", use_column_width=True)
